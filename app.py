@@ -12,10 +12,9 @@ conf_threshold = st.sidebar.slider(
     "Confidence Threshold", 
     min_value=0.05, max_value=1.0, value=0.25, step=0.05
 )
-iou_threshold = st.sidebar.slider(
-    "IoU Threshold (NMS)", 
-    min_value=0.1, max_value=1.0, value=0.7, step=0.05
-)
+# IoU langsung ditentukan di kode, tidak pakai slider
+iou_threshold = 0.7  
+
 img_size = st.sidebar.selectbox(
     "Image Size (pixels)", [320, 480, 640, 800, 1024], index=2
 )
