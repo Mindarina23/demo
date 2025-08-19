@@ -1,7 +1,6 @@
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
-import numpy as np
 import os
 
 st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi")
@@ -9,11 +8,7 @@ st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi")
 # --- Load Model ---
 @st.cache_resource
 def load_model():
-    model_path = "best.pt"
-    if not os.path.exists(model_path):
-        st.error("❌ Model 'best.pt' tidak ditemukan. Upload dulu ke project folder.")
-        st.stop()
-    return YOLO(model_path)
+    return YOLO("best.pt")   # pastikan file best.pt ada di folder project
 
 model = load_model()
 
@@ -25,32 +20,42 @@ uploaded_file = st.file_uploader(
 
 # --- Jika ada file diupload ---
 if uploaded_file is not None:
-    # Buka gambar dengan PIL
-    img = Image.open(uploaded_file).convert("RGB")
-    img_np = np.array(img)  # convert ke numpy array
+    # Simpan file upload ke disk (biar sama dengan Colab)
+    temp_path = "temp.jpg"
+    with open(temp_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
 
     # Tampilkan gambar asli
-    st.image(img_np, caption="📷 Gambar asli", use_column_width=True)
+    img = Image.open(temp_path).convert("RGB")
+    st.image(img, caption="📷 Gambar asli", use_column_width=True)
 
-    # Jalankan prediksi
+    # Jalankan prediksi persis seperti di Colab
     st.write("🔍 Sedang mendeteksi penyakit...")
-    results = model.predict(img_np, conf=0.4, imgsz=640, verbose=False)
+    results = model.predict(
+        source=temp_path,
+        conf=0.4,
+        imgsz=640,
+        line_thickness=2,
+        verbose=False
+    )
 
     # Tampilkan hasil deteksi dengan bounding box
     for r in results:
-        vis_rgb = r.plot()  # hasil deteksi sudah dalam RGB
+        vis_bgr = r.plot()             # hasil deteksi BGR
+        vis_rgb = vis_bgr[:, :, ::-1]  # ubah ke RGB
         st.image(vis_rgb, caption="✅ Hasil deteksi", use_column_width=True)
 
         # --- Tambahkan informasi prediksi ---
         if r.boxes is not None and len(r.boxes) > 0:
-            st.subheader("📊 Hasil Deteksi Penyakit:")
-            data = []
+            st.subheader("📊 Deteksi Penyakit:")
             for box in r.boxes:
-                cls_id = int(box.cls[0])          # class id
-                cls_name = model.names[cls_id]    # nama class
-                conf = float(box.conf[0])         # confidence
-                data.append({"Penyakit": cls_name, "Confidence": f"{conf:.2f}"})
-
-            st.table(data)
+                cls_id = int(box.cls[0])       # class id
+                cls_name = model.names[cls_id] # nama class
+                conf = float(box.conf[0])      # confidence
+                st.write(f"- **{cls_name}** (confidence: {conf:.2f})")
         else:
             st.warning("❌ Tidak ada penyakit yang terdeteksi pada gambar ini.")
+
+    # Hapus file temp kalau mau
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
