@@ -37,7 +37,7 @@ if uploaded_file is not None:
 
     # Jalankan prediksi
     st.write("🔍 Sedang mendeteksi...")
-    results = model.predict(np.array(img), conf=0.5, verbose=False)
+    results = model.predict(np.array(img), conf=0.4, verbose=False)
 
     # Tampilkan hasil deteksi dengan bounding box manual
     for r in results:
@@ -61,3 +61,4 @@ if uploaded_file is not None:
             st.image(img_draw, caption="✅ Hasil deteksi (bounding box)")
         else:
             st.info("🚫 Tidak ada penyakit yang terdeteksi.")
+
