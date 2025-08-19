@@ -25,7 +25,7 @@ if uploaded_file is not None:
     img_np = np.array(img)  # convert ke numpy array supaya aman
 
     # Tampilkan gambar asli
-    st.image(img_np, caption="📷 Gambar asli", use_container_width=True)
+    st.image(img_np, caption="📷 Gambar asli")
 
     # Jalankan prediksi
     st.write("🔍 Sedang mendeteksi...")
@@ -35,4 +35,4 @@ if uploaded_file is not None:
     for r in results:
         vis_bgr = r.plot()             # hasil deteksi BGR
         vis_rgb = vis_bgr[:, :, ::-1]  # ubah ke RGB
-        st.image(vis_rgb, caption="✅ Hasil deteksi", use_container_width=True)
+        st.image(vis_rgb, caption="✅ Hasil deteksi")
