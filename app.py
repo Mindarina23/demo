@@ -2,58 +2,58 @@ import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
 import numpy as np
+import os
 
+st.set_page_config(page_title="Deteksi Penyakit Daun Padi", page_icon="🌾", layout="centered")
 st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi")
 
 # --- Load Model ---
 @st.cache_resource
 def load_model():
-    return YOLO("best.pt")   # pastikan file best.pt ada di folder project
+    # pastikan best.pt ada di folder yang sama dengan app
+    return YOLO("best.pt")
 
 model = load_model()
 
 # --- Upload File ---
 uploaded_file = st.file_uploader(
-    "Upload gambar daun padi",
+    "📤 Upload gambar daun padi",
     type=["jpg", "jpeg", "png", "webp", "bmp"]
 )
 
 # --- Jika ada file diupload ---
 if uploaded_file is not None:
-    # Buka gambar dengan PIL
+    # Buka gambar asli
     img = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(img)
 
-    # Tampilkan gambar asli
-    st.image(img_np, caption="📷 Gambar asli")
+    st.image(img_np, caption="📷 Gambar asli", use_container_width=True)
 
-    # Jalankan prediksi (samakan param Colab)
-    st.write("🔍 Sedang mendeteksi...")
+    # Jalankan prediksi
+    st.write("🔍 Sedang mendeteksi penyakit...")
     results = model.predict(
-        source=img_np,
-        conf=0.40,           # sama seperti Colab
-        imgsz=640,           # ukuran input konsisten
-        line_thickness=2,    # biar bbox jelas
-        show_labels=True,
-        show_conf=True,
+        img_np,
+        conf=0.40,          # confidence threshold
+        imgsz=640,          # ukuran gambar input
+        line_thickness=2,   # tebal bounding box
         verbose=False
     )
 
-    # Ambil hasil pertama
-    r = results[0]
+    # Tampilkan hasil prediksi
+    for r in results:
+        # gambar hasil dengan bounding box, label, dan confidence
+        vis_bgr = r.plot()
+        vis_rgb = vis_bgr[:, :, ::-1]
 
-    # Tampilkan gambar hasil prediksi
-    vis_bgr = r.plot()             # hasil prediksi dengan bbox
-    vis_rgb = vis_bgr[:, :, ::-1]  # convert BGR → RGB
-    st.image(vis_rgb, caption="✅ Hasil deteksi")
+        st.image(vis_rgb, caption="✅ Hasil deteksi", use_container_width=True)
 
-    # Tampilkan detail deteksi
-    st.subheader("📋 Detail Deteksi")
-    if r.boxes is not None and len(r.boxes) > 0:
-        for box in r.boxes:
-            cls_id = int(box.cls[0])
-            conf = float(box.conf[0])
-            label = model.names[cls_id] if model.names else str(cls_id)
-            st.write(f"- {label} ({conf:.2%})")
-    else:
-        st.write("❌ Tidak ada objek terdeteksi pada gambar ini.")
+        # Tampilkan detail deteksi (kelas + confidence)
+        if r.boxes is not None and len(r.boxes) > 0:
+            st.subheader("📊 Detail Deteksi")
+            for box in r.boxes:
+                cls_id = int(box.cls[0])
+                cls_name = model.names[cls_id]
+                conf = float(box.conf[0])
+                st.write(f"- **{cls_name}** dengan confidence: {conf:.2f}")
+        else:
+            st.info("Tidak ada penyakit terdeteksi pada gambar ini.")
