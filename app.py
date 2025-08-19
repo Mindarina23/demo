@@ -1,7 +1,8 @@
 import streamlit as st
 from ultralytics import YOLO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import os
 
 st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi")
 
@@ -22,28 +23,41 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     # Buka gambar dengan PIL
     img = Image.open(uploaded_file).convert("RGB")
-    img_np = np.array(img)  # convert ke numpy array supaya aman
+    img_draw = img.copy()
+    draw = ImageDraw.Draw(img_draw)
+
+    # Font (fallback kalau Arial tidak ada di server)
+    try:
+        font = ImageFont.truetype("arial.ttf", 20)
+    except:
+        font = ImageFont.load_default()
 
     # Tampilkan gambar asli
-    st.image(img_np, caption="📷 Gambar asli")
+    st.image(img, caption="📷 Gambar asli")
 
     # Jalankan prediksi
     st.write("🔍 Sedang mendeteksi...")
-    results = model.predict(img_np, conf=0.5, verbose=False)
+    results = model.predict(np.array(img), conf=0.5, verbose=False)
 
-    # Tampilkan hasil deteksi dengan bounding box
+    # Tampilkan hasil deteksi dengan bounding box manual
     for r in results:
-        vis_bgr = r.plot()             # hasil deteksi BGR (sudah ada box + label)
-        vis_rgb = vis_bgr[:, :, ::-1]  # ubah ke RGB
-        st.image(vis_rgb, caption="✅ Hasil deteksi dengan bounding box")
-
-        # Ambil detail deteksi (label + confidence)
         if r.boxes is not None and len(r.boxes) > 0:
-            st.subheader("📋 Detail Deteksi")
             for box in r.boxes:
+                # Ambil koordinat bounding box
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
                 cls_id = int(box.cls[0])   # ID class
                 cls_name = r.names[cls_id] # Nama class
                 conf = float(box.conf[0])  # Confidence
-                st.write(f"- {cls_name} ({conf:.2f})")
+
+                # Gambar kotak (hijau)
+                draw.rectangle([x1, y1, x2, y2], outline="lime", width=3)
+
+                # Gambar label di atas box
+                text = f"{cls_name} {conf:.2f}"
+                text_size = draw.textbbox((x1, y1), text, font=font)
+                draw.rectangle(text_size, fill="lime")
+                draw.text((x1, y1), text, fill="black", font=font)
+
+            st.image(img_draw, caption="✅ Hasil deteksi (bounding box)")
         else:
             st.info("🚫 Tidak ada penyakit yang terdeteksi.")
