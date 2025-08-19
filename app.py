@@ -33,7 +33,7 @@ if uploaded_file is not None:
     st.write("🔍 Sedang mendeteksi penyakit...")
     results = model.predict(
         source=temp_path,
-        conf=0.4,
+        conf=0.2,
         imgsz=640,
         line_thickness=2,
         verbose=False
@@ -59,3 +59,4 @@ if uploaded_file is not None:
     # Hapus file temp kalau mau
     if os.path.exists(temp_path):
         os.remove(temp_path)
+
