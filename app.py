@@ -31,8 +31,19 @@ if uploaded_file is not None:
     st.write("🔍 Sedang mendeteksi...")
     results = model.predict(img_np, conf=0.5, verbose=False)
 
-    # Tampilkan hasil deteksi
+    # Tampilkan hasil deteksi dengan bounding box
     for r in results:
-        vis_bgr = r.plot()             # hasil deteksi BGR
+        vis_bgr = r.plot()             # hasil deteksi BGR (sudah ada box + label)
         vis_rgb = vis_bgr[:, :, ::-1]  # ubah ke RGB
-        st.image(vis_rgb, caption="✅ Hasil deteksi")
+        st.image(vis_rgb, caption="✅ Hasil deteksi dengan bounding box")
+
+        # Ambil detail deteksi (label + confidence)
+        if r.boxes is not None and len(r.boxes) > 0:
+            st.subheader("📋 Detail Deteksi")
+            for box in r.boxes:
+                cls_id = int(box.cls[0])   # ID class
+                cls_name = r.names[cls_id] # Nama class
+                conf = float(box.conf[0])  # Confidence
+                st.write(f"- {cls_name} ({conf:.2f})")
+        else:
+            st.info("🚫 Tidak ada penyakit yang terdeteksi.")
