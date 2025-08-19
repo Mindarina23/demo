@@ -11,7 +11,7 @@ def load_model():
 
 model = load_model()
 
-uploaded_file = st.file_uploader("Upload gambar daun padi", type=["jpg","jpeg","png"])
+uploaded_file = st.file_uploader("Upload gambar daun padi", type=["jpg","jpeg","png","webp","bmp"])
 
 if uploaded_file is not None:
     img = Image.open(uploaded_file).convert("RGB")
