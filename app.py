@@ -2,6 +2,7 @@ import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
 import os
+import pandas as pd
 
 st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi")
 
@@ -39,20 +40,33 @@ if uploaded_file is not None:
         verbose=False
     )
 
-    # Tampilkan hasil deteksi dengan bounding box
+    # Ambil hasil prediksi
     for r in results:
-        vis_bgr = r.plot()             # hasil deteksi BGR
-        vis_rgb = vis_bgr[:, :, ::-1]  # ubah ke RGB
+        # Tampilkan hasil bounding box di gambar
+        vis_bgr = r.plot()
+        vis_rgb = vis_bgr[:, :, ::-1]
         st.image(vis_rgb, caption="✅ Hasil deteksi", use_column_width=True)
 
-        # --- Tambahkan informasi prediksi ---
+        # --- Buat tabel detail deteksi ---
         if r.boxes is not None and len(r.boxes) > 0:
-            st.subheader("📊 Deteksi Penyakit:")
+            data = []
             for box in r.boxes:
-                cls_id = int(box.cls[0])       # class id
-                cls_name = model.names[cls_id] # nama class
-                conf = float(box.conf[0])      # confidence
-                st.write(f"- **{cls_name}** (confidence: {conf:.2f})")
+                cls_id = int(box.cls[0])
+                cls_name = model.names[cls_id]
+                conf = float(box.conf[0])
+                xyxy = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
+                data.append({
+                    "Penyakit": cls_name,
+                    "Confidence": f"{conf:.2f}",
+                    "x1": int(xyxy[0]),
+                    "y1": int(xyxy[1]),
+                    "x2": int(xyxy[2]),
+                    "y2": int(xyxy[3]),
+                })
+            
+            df = pd.DataFrame(data)
+            st.subheader("📊 Detail Deteksi:")
+            st.dataframe(df, use_container_width=True)
         else:
             st.warning("❌ Tidak ada penyakit yang terdeteksi pada gambar ini.")
 
