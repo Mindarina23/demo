@@ -6,6 +6,20 @@ import pandas as pd
 
 st.title("🌾 Demo YOLOv11 - Deteksi Penyakit Daun Padi (Multi-class Friendly)")
 
+# --- Sidebar Controls ---
+st.sidebar.header("⚙️ Pengaturan Deteksi")
+conf_threshold = st.sidebar.slider(
+    "Confidence Threshold", 
+    min_value=0.05, max_value=1.0, value=0.25, step=0.05
+)
+iou_threshold = st.sidebar.slider(
+    "IoU Threshold (NMS)", 
+    min_value=0.1, max_value=1.0, value=0.7, step=0.05
+)
+img_size = st.sidebar.selectbox(
+    "Image Size (pixels)", [320, 480, 640, 800, 1024], index=2
+)
+
 # --- Load Model ---
 @st.cache_resource
 def load_model():
@@ -34,9 +48,9 @@ if uploaded_file is not None:
     st.write("🔍 Sedang mendeteksi penyakit...")
     results = model.predict(
         source=temp_path,
-        conf=0.1,      # lebih rendah = tangkap lebih banyak
-        iou=0.7,       # biar nggak terlalu agresif hapus box lain
-        imgsz=640,
+        conf=conf_threshold,
+        iou=iou_threshold,
+        imgsz=img_size,
         line_thickness=2,
         verbose=False
     )
